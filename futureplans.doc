@@ -1,0 +1,59 @@
+Future Plans: Service Type Impact Tuning
+
+Example A — strict SLA
+- Deadlines:
+  - express: created_at + 3 hours
+  - same-day: created_at + 8 hours
+  - next-day: created_at + 24 hours
+  - scheduled: scheduled_date + scheduled_time (hard deadline)
+  - standard: created_at + 48 hours
+- Scoring weights:
+  - deadline lateness 50%
+  - total time 25%
+  - distance 15%
+  - express-first bias 10%
+
+Example B — cost-first (fuel sensitive)
+- Deadlines:
+  - express: created_at + 4 hours
+  - same-day: created_at + 10 hours
+  - next-day: + 24 hours
+  - standard: + 72 hours
+- Scoring weights:
+  - distance 45%
+  - total time 25%
+  - deadline lateness 20%
+  - express-first bias 10%
+
+Example C — express favoritism (premium service)
+- Deadlines:
+  - express: created_at + 2 hours
+  - same-day: + 6 hours
+  - next-day: + 20 hours
+  - standard: + 48 hours
+- Ordering bias:
+  - express bookings must appear in first 30% of route positions
+- Scoring weights:
+  - express-first bias 30%
+  - deadline lateness 30%
+  - time 25%
+  - distance 15%
+
+Example D — balanced + scheduled strict
+- Deadlines:
+  - scheduled: hard deadline, penalty x2 for lateness
+  - express: created_at + 4 hours
+  - same-day: + 9 hours
+  - next-day: + 24 hours
+  - standard: + 48 hours
+- Scoring weights:
+  - deadline lateness 40%
+  - time 30%
+  - distance 20%
+  - express-first bias 10%
+
+To decide, provide:
+1) Deadline offsets for each service_type
+2) Scheduled: hard or soft
+3) Scoring weights (sum to 100)
+4) Any express ordering rule

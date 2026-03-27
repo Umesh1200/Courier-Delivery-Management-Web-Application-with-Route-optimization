@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Driver Navigation</title>
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="driver.css" />
+  </head>
+  <body class="nav-body">
+    <div class="nav-shell">
+      <header class="nav-topbar">
+        <a class="nav-topbar__back" href="/courier-dashboard#route">Back to Dashboard</a>
+        <span class="nav-topbar__title">Driver Navigation</span>
+      </header>
+
+      <div class="nav-map" id="navMap"></div>
+      <div class="nav-modern-overlay" aria-hidden="false">
+        <section class="nav-modern-banner" id="modernBanner" role="status">
+          <div class="nav-modern-turn-icon" id="modernTurnIcon"></div>
+          <div class="nav-modern-turn-body">
+            <p class="nav-modern-turn-distance" id="modernTurnDistance">-</p>
+            <h2 class="nav-modern-turn-street" id="modernTurnStreet">Waiting for route</h2>
+            <p class="nav-modern-subline" id="modernPickupLine">Pickup details will appear here.</p>
+            <p class="nav-modern-subline nav-modern-subline--muted" id="modernPickupMeta">Build route to start guidance.</p>
+          </div>
+        </section>
+
+        <div class="nav-modern-controls" aria-label="Map controls">
+          <button
+            class="nav-modern-btn nav-modern-btn--icon"
+            id="modernRecenterBtn"
+            type="button"
+            title="Center"
+            aria-label="Center"
+          ></button>
+          <button
+            class="nav-modern-btn nav-modern-btn--icon"
+            id="modernFollowBtn"
+            type="button"
+            title="Follow"
+            aria-label="Follow"
+          ></button>
+          <button
+            class="nav-modern-btn nav-modern-btn--icon"
+            id="modernFitBtn"
+            type="button"
+            title="Fit route"
+            aria-label="Fit route"
+          ></button>
+        </div>
+
+        <div class="nav-modern-speed" id="modernSpeedCard" aria-label="Speed limit">
+          <p class="nav-modern-speed__value" id="modernSpeedNumber">30</p>
+          <p class="nav-modern-speed__label">LIMIT</p>
+        </div>
+
+        <section class="nav-modern-sheet">
+          <div class="nav-modern-sheet__left">
+            <p class="nav-modern-meta">
+              <span id="modernEtaValue">-</span>
+              <span class="nav-modern-meta__dot">&bull;</span>
+              <span id="modernDistValue">-</span>
+            </p>
+            <p class="nav-modern-pickup" id="modernSheetPickup">Waiting for destination...</p>
+          </div>
+          <div class="nav-modern-sheet__right">
+            <button class="nav-modern-action" id="modernNavigateBtn" type="button">Navigate</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="nav-panel">
+        <div class="nav-block">
+          <div class="nav-block__head">
+            <h2>Navigation</h2>
+            <button
+              class="btn ghost small nav-section-toggle"
+              id="routeStepsToggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="routeStepsPanel"
+            >
+              Hide steps
+            </button>
+          </div>
+          <div class="nav-stats">
+            <div class="nav-stat">
+              <span class="nav-stat__label">Distance</span>
+              <span class="nav-stat__value" id="navDistance">-</span>
+            </div>
+            <div class="nav-stat">
+              <span class="nav-stat__label">ETA</span>
+              <span class="nav-stat__value" id="navEta">-</span>
+            </div>
+          </div>
+          <div class="nav-progress">
+            <div class="nav-progress__bar" id="navProgress"></div>
+          </div>
+          <div class="field-actions">
+            <button class="btn" id="startNav" disabled>Start navigation</button>
+            <button class="btn ghost" id="stopNav" disabled>Stop</button>
+          </div>
+          <div class="route-steps-wrap" id="routeStepsPanel">
+            <div class="route-steps" id="routeSteps"></div>
+          </div>
+        </div>
+
+        <div class="nav-block nav-block--setup">
+          <div class="nav-block__head nav-block__head--icon-only">
+            <button
+              class="btn ghost small nav-section-toggle route-setup-icon-toggle"
+              id="routeSetupToggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="routeSetupPanel"
+              aria-label="Route setup"
+              title="Route setup"
+            ></button>
+          </div>
+          <div id="routeSetupPanel">
+            <div class="field">
+              <label for="startName">Current leg start</label>
+              <input type="text" id="startName" placeholder="Choose start point on map" readonly />
+              <p class="location-meta" id="startCoords">Coordinates: -</p>
+              <input type="hidden" id="startInput" />
+            </div>
+            <div class="field">
+              <label for="startSearch">Search start location</label>
+              <div class="search-row">
+                <input type="text" id="startSearch" placeholder="Type place name" autocomplete="off" />
+                <button class="btn ghost small search-set-btn" id="startSearchSet" type="button">Set</button>
+              </div>
+              <div class="search-results" id="startSearchResults" hidden></div>
+            </div>
+            <div class="field">
+              <label for="endName">Current leg destination</label>
+              <input type="text" id="endName" placeholder="Choose destination point on map" readonly />
+              <p class="location-meta" id="endCoords">Coordinates: -</p>
+              <input type="hidden" id="endInput" />
+            </div>
+            <div class="field">
+              <label for="endSearch">Search destination location</label>
+              <div class="search-row">
+                <input type="text" id="endSearch" placeholder="Type place name" autocomplete="off" />
+                <button class="btn ghost small search-set-btn" id="endSearchSet" type="button">Set</button>
+              </div>
+              <div class="search-results" id="endSearchResults" hidden></div>
+            </div>
+            <div class="field-actions">
+              <button class="btn ghost small" id="pickOptionsToggle" type="button" aria-expanded="false">
+                Pick on map
+              </button>
+            </div>
+            <div class="pick-options" id="pickOptionsPanel" hidden>
+              <div class="field-actions">
+                <button class="btn ghost small" id="pickStart" type="button">Pick Start</button>
+                <button class="btn ghost small" id="pickEnd" type="button">Pick Destination</button>
+              </div>
+              <div class="field-actions">
+                <button class="btn ghost small" id="pickBoth" type="button">Pick Start &amp; Destination</button>
+                <button class="btn ghost small" id="pickOptionsClose" type="button">Cancel</button>
+              </div>
+            </div>
+            <p class="pick-help" id="pickHelp">
+              Click <strong>Pick on map</strong> to choose how you want to pick.
+            </p>
+            <div class="field two-col">
+              <div>
+                <label for="speedInput">Speed (km/h)</label>
+                <input type="number" id="speedInput" min="5" max="80" value="30" />
+              </div>
+              <div>
+                <label for="followToggle">Follow car</label>
+                <div class="toggle">
+                  <input type="checkbox" id="followToggle" checked />
+                  <label for="followToggle">Keep centered</label>
+                </div>
+              </div>
+            </div>
+            <div class="field-actions">
+              <button class="btn" id="calcRoute">Calculate route</button>
+              <button class="btn ghost" id="clearRoute">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-block nav-note">
+          <h3>Tip</h3>
+          <p>Pick start and end points on the map to preview the route before starting navigation.</p>
+        </div>
+      </aside>
+    </div>
+
+    <script src="vendor/leaflet/leaflet.js"></script>
+    <script src="driver.js"></script>
+  </body>
+</html>

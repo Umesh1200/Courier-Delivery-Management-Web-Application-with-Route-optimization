@@ -1,0 +1,272 @@
+:root {
+  --ink: #1c1a17;
+  --paper: #fffaf2;
+  --muted: rgba(28, 26, 23, 0.62);
+  --border: rgba(28, 26, 23, 0.16);
+  --primary: #2f6eff;
+  --primary-soft: rgba(47, 110, 255, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ink);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.nav-block {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field input[type="text"],
+.field input[type="number"] {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.field input[readonly] {
+  background: #f8fafc;
+  cursor: default;
+  font-weight: 600;
+}
+
+.field input[type="text"]:focus,
+.field input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.location-meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.field.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pick-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pick-help strong {
+  color: var(--ink);
+}
+
+.pick-help.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.pick-options {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.pick-options[hidden] {
+  display: none;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.toggle label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  min-height: 40px;
+  padding: 10px 14px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(0.96);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: rgba(28, 26, 23, 0.06);
+}
+
+.btn.small {
+  min-height: 34px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.route-now {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.route-now__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.route-now__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.route-now__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.route-stage {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.route-steps {
+  display: grid;
+  gap: 8px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.route-step {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.route-step.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+
+.route-step__icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: rgba(28, 26, 23, 0.22);
+}
+
+.route-step__icon.continue {
+  background: #2f6eff;
+}
+
+.route-step__icon.turn-left,
+.route-step__icon.turn-right {
+  background: #ff7f3e;
+}
+
+.route-step__icon.arrive {
+  background: #25a869;
+}
+
+.route-step__content {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.route-step__content strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.route-step__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .field.two-col {
+    grid-template-columns: 1fr;
+  }
+}
