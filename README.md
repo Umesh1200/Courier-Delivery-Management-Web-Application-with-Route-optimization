@@ -201,22 +201,6 @@ The repository also includes a PHP backend, a MySQL schema, demo-friendly UI sta
    - Frontend: `http://localhost:5173`
    - Backend: `http://localhost:8000`
 
-## Demo Routes For Screenshots
-
-These routes are useful when you want to reproduce or refresh the README screenshots locally.
-
-- `http://localhost:5173/landing-page?demo=landing`
-- `http://localhost:5173/user-dashboard?demo=customer`
-- `http://localhost:5173/create-booking?demo=customer`
-- `http://localhost:5173/order-tracking?id=CF-5002&demo=tracking`
-- `http://localhost:5173/courier-dashboard?demo=pickup`
-- `http://localhost:5173/courier-dashboard?demo=delivery`
-- `http://localhost:5173/courier-navigation?demo=navigation`
-- `http://localhost:5173/admin-dashboard`
-- `http://localhost:5173/admin-analytics`
-- `http://localhost:5173/order-management`
-- `http://localhost:5173/admin-support`
-
 ## Project Structure
 
 - `src/` contains the React application, role-specific pages, shared UI, and utilities
