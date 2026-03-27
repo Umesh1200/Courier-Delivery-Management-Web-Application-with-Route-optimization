@@ -5,3 +5,4 @@ dist/
 .env.*
 backend/config.php
 backend/public/uploads/
+backend/migrations/
