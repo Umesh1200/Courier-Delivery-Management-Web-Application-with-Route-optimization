@@ -1,10 +1,10 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
-import SameDayDelivery from '../../../assets/images/landing-page/delivery-courier-on-motorcycle.jpg';
-import StandardDelivery from '../../../assets/images/landing-page/rocket_gen_img_12177098f-1767040458682.png';
-import ExpressShipping from '../../../assets/images/landing-page/white-delivery-truck.jpg';
-import BulkShipping from '../../../assets/images/landing-page/rocket_gen_img_1a0964812-1767342256090.png';
+import SameDayDelivery from '../../assets/images/landing-page/delivery-courier-on-motorcycle.jpg';
+import StandardDelivery from '../../assets/images/landing-page/rocket_gen_img_12177098f-1767040458682.png';
+import ExpressShipping from '../../assets/images/landing-page/white-delivery-truck.jpg';
+import BulkShipping from '../../assets/images/landing-page/rocket_gen_img_1a0964812-1767342256090.png';
 
 const ServicesSection = () => {
   const services = [

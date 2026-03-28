@@ -2,7 +2,7 @@ import React from 'react';
 import Button from '../../../components/ui/Button';
 import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
-import HeroImage from '../../../assets/images/landing-page/rocket_gen_img_17700d7e9-1766420092572.png';
+import HeroImage from '../../assets/images/landing-page/rocket_gen_img_17700d7e9-1766420092572.png';
 
 const HeroSection = ({
   onBookNow,

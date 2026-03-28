@@ -1,12 +1,12 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
-import SarahJohnson from '../../../assets/images/landing-page/rocket_gen_img_170699746-1763294878713.png';
-import MichaelChen from '../../../assets/images/landing-page/rocket_gen_img_1665ca73c-1763296377705.png';
-import EmilyRodriguez from '../../../assets/images/landing-page/rocket_gen_img_1dfbfb501-1763296570605.png';
-import DavidThompson from '../../../assets/images/landing-page/rocket_gen_img_1faa738ad-1763294932464.png';
-import LisaAnderson from '../../../assets/images/landing-page/rocket_gen_img_1b5600450-1763294005133.png';
-import JamesWilson from '../../../assets/images/landing-page/rocket_gen_img_17ea041e2-1763295992510.png';
+import SarahJohnson from '../../assets/images/landing-page/rocket_gen_img_170699746-1763294878713.png';
+import MichaelChen from '../../assets/images/landing-page/rocket_gen_img_1665ca73c-1763296377705.png';
+import EmilyRodriguez from '../../assets/images/landing-page/rocket_gen_img_1dfbfb501-1763296570605.png';
+import DavidThompson from '../../assets/images/landing-page/rocket_gen_img_1faa738ad-1763294932464.png';
+import LisaAnderson from '../../assets/images/landing-page/rocket_gen_img_1b5600450-1763294005133.png';
+import JamesWilson from '../../assets/images/landing-page/rocket_gen_img_17ea041e2-1763295992510.png';
 
 const TestimonialsSection = () => {
   const testimonials = [
