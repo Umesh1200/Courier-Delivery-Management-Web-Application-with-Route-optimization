@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../../../components/ui/Button';
 import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
+import HeroImage from '../../../assets/images/landing-page/rocket_gen_img_17700d7e9-1766420092572.png';
 
 const HeroSection = ({
   onBookNow,
@@ -113,7 +114,7 @@ const HeroSection = ({
           <div className="relative">
             <div className="relative rounded-2xl overflow-hidden shadow-elevation-xl">
               <Image
-                src="https://img.rocket.new/generatedImages/rocket_gen_img_17700d7e9-1766420092572.png"
+                src={HeroImage}
                 alt="Professional courier delivery person in blue uniform holding cardboard package box standing next to white delivery van in urban city street setting"
                 className="w-full h-64 md:h-80 lg:h-96 object-cover" />
 
@@ -146,5 +147,4 @@ const HeroSection = ({
     </section>);
 
 };
-
 export default HeroSection;

@@ -1,6 +1,12 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
+import SarahJohnson from '../../../assets/images/landing-page/rocket_gen_img_170699746-1763294878713.png';
+import MichaelChen from '../../../assets/images/landing-page/rocket_gen_img_1665ca73c-1763296377705.png';
+import EmilyRodriguez from '../../../assets/images/landing-page/rocket_gen_img_1dfbfb501-1763296570605.png';
+import DavidThompson from '../../../assets/images/landing-page/rocket_gen_img_1faa738ad-1763294932464.png';
+import LisaAnderson from '../../../assets/images/landing-page/rocket_gen_img_1b5600450-1763294005133.png';
+import JamesWilson from '../../../assets/images/landing-page/rocket_gen_img_17ea041e2-1763295992510.png';
 
 const TestimonialsSection = () => {
   const testimonials = [
@@ -8,7 +14,7 @@ const TestimonialsSection = () => {
     id: 1,
     name: "Sarah Johnson",
     role: "Small Business Owner",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_170699746-1763294878713.png",
+    avatar: SarahJohnson,
     avatarAlt: "Professional headshot of Caucasian woman with shoulder-length brown hair wearing navy blue blazer smiling warmly at camera",
     rating: 5,
     comment: "CourierFlow has transformed how we handle deliveries. The real-time tracking and reliable service have made our customers much happier. Highly recommended for any business!",
@@ -18,7 +24,7 @@ const TestimonialsSection = () => {
     id: 2,
     name: "Michael Chen",
     role: "E-commerce Manager",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1665ca73c-1763296377705.png",
+    avatar: MichaelChen,
     avatarAlt: "Professional headshot of Asian man with short black hair wearing gray suit and white shirt with confident expression",
     rating: 5,
     comment: "The bulk shipping options and volume discounts have saved us thousands. The platform is intuitive and the courier network is extensive. Best decision we made this year.",
@@ -28,7 +34,7 @@ const TestimonialsSection = () => {
     id: 3,
     name: "Emily Rodriguez",
     role: "Freelance Designer",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1dfbfb501-1763296570605.png",
+    avatar: EmilyRodriguez,
     avatarAlt: "Professional headshot of Hispanic woman with long dark hair wearing red blouse with friendly smile in natural lighting",
     rating: 5,
     comment: "As a freelancer, I need reliable delivery for client samples. CourierFlow's same-day service is a lifesaver. The app is easy to use and customer support is excellent.",
@@ -38,7 +44,7 @@ const TestimonialsSection = () => {
     id: 4,
     name: "David Thompson",
     role: "Operations Director",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1faa738ad-1763294932464.png",
+    avatar: DavidThompson,
     avatarAlt: "Professional headshot of African American man with short hair wearing dark suit and tie with professional demeanor",
     rating: 5,
     comment: "We've tried multiple courier services, but CourierFlow stands out. The scheduling flexibility and transparent pricing make logistics planning so much easier.",
@@ -48,7 +54,7 @@ const TestimonialsSection = () => {
     id: 5,
     name: "Lisa Anderson",
     role: "Retail Store Manager",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1b5600450-1763294005133.png",
+    avatar: LisaAnderson,
     avatarAlt: "Professional headshot of Caucasian woman with blonde hair in ponytail wearing white shirt with warm smile",
     rating: 5,
     comment: "The verified couriers and secure delivery options give us peace of mind. Our inventory transfers between stores have never been smoother. Fantastic service!",
@@ -58,7 +64,7 @@ const TestimonialsSection = () => {
     id: 6,
     name: "James Wilson",
     role: "Startup Founder",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_17ea041e2-1763295992510.png",
+    avatar: JamesWilson,
     avatarAlt: "Professional headshot of Caucasian man with beard wearing casual blue shirt with confident smile in office setting",
     rating: 5,
     comment: "CourierFlow scaled with our startup perfectly. From a few packages a week to hundreds daily, the platform handled it all seamlessly. The analytics are incredibly helpful.",

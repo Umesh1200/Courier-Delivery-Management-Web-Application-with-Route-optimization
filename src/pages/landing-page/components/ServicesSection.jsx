@@ -1,6 +1,10 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
+import SameDayDelivery from '../../../assets/images/landing-page/delivery-courier-on-motorcycle.jpg';
+import StandardDelivery from '../../../assets/images/landing-page/rocket_gen_img_12177098f-1767040458682.png';
+import ExpressShipping from '../../../assets/images/landing-page/white-delivery-truck.jpg';
+import BulkShipping from '../../../assets/images/landing-page/rocket_gen_img_1a0964812-1767342256090.png';
 
 const ServicesSection = () => {
   const services = [
@@ -9,7 +13,7 @@ const ServicesSection = () => {
     title: "Same-Day Delivery",
     description: "Urgent packages delivered within hours. Perfect for time-sensitive documents and parcels.",
     icon: "Zap",
-    image: "https://images.unsplash.com/photo-1669296585183-1c58af09f33c",
+    image: SameDayDelivery,
     imageAlt: "Delivery courier on red motorcycle speeding through busy city street with package box secured in rear carrier during daytime rush hour",
     price: "From RS 15",
     features: ["2-4 hour delivery", "Real-time tracking", "Priority handling"]
@@ -19,7 +23,7 @@ const ServicesSection = () => {
     title: "Standard Delivery",
     description: "Reliable next-day delivery for regular shipments. Most popular choice for everyday needs.",
     icon: "Package",
-    image: "https://img.rocket.new/generatedImages/rocket_gen_img_12177098f-1767040458682.png",
+    image: StandardDelivery,
     imageAlt: "Stack of brown cardboard shipping boxes with delivery labels on wooden warehouse floor with courier worker in background organizing packages",
     price: "From RS 8",
     features: ["Next-day delivery", "Package insurance", "Email notifications"]
@@ -29,7 +33,7 @@ const ServicesSection = () => {
     title: "Express Shipping",
     description: "Fast nationwide delivery with guaranteed timelines. Ideal for business shipments.",
     icon: "Truck",
-    image: "https://images.unsplash.com/photo-1623478604833-e53fb45a66dd",
+    image: ExpressShipping,
     imageAlt: "White delivery truck with company branding parked at modern warehouse loading dock with open cargo door and packages being loaded by workers",
     price: "From RS 25",
     features: ["1-2 day delivery", "Signature required", "Premium support"]
@@ -39,7 +43,7 @@ const ServicesSection = () => {
     title: "Bulk Shipping",
     description: "Cost-effective solutions for businesses with regular shipping needs and high volumes.",
     icon: "Boxes",
-    image: "https://img.rocket.new/generatedImages/rocket_gen_img_1a0964812-1767342256090.png",
+    image: BulkShipping,
     imageAlt: "Large warehouse interior filled with organized rows of stacked cardboard boxes on industrial shelving with forklift operator moving pallets in background",
     price: "Custom Quote",
     features: ["Volume discounts", "Dedicated support", "Flexible scheduling"]
