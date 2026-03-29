@@ -493,6 +493,294 @@ function normalize_support_ticket_category($value)
     return 'other';
 }
 
+function normalize_notification_role($value, $fallback = '')
+{
+    $role = strtolower(trim((string)$value));
+    if (in_array($role, ['customer', 'courier', 'admin'], true)) {
+        return $role;
+    }
+    return $fallback;
+}
+
+function notifications_table_ready(PDO $pdo): bool
+{
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
+
+    try {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS notifications (
+                id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                user_id BIGINT NOT NULL,
+                audience_role VARCHAR(20) NULL,
+                type VARCHAR(50) NOT NULL DEFAULT 'info',
+                title VARCHAR(150) NOT NULL,
+                body TEXT NULL,
+                icon VARCHAR(100) NULL,
+                link_url TEXT NULL,
+                dedupe_key VARCHAR(191) NULL,
+                is_read BOOLEAN DEFAULT false,
+                read_at TIMESTAMP NULL DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+
+        $columnMigrations = [
+            "SHOW COLUMNS FROM notifications LIKE 'audience_role'" => "ALTER TABLE notifications ADD COLUMN audience_role VARCHAR(20) NULL AFTER user_id",
+            "SHOW COLUMNS FROM notifications LIKE 'type'" => "ALTER TABLE notifications ADD COLUMN type VARCHAR(50) NOT NULL DEFAULT 'info' AFTER audience_role",
+            "SHOW COLUMNS FROM notifications LIKE 'icon'" => "ALTER TABLE notifications ADD COLUMN icon VARCHAR(100) NULL AFTER body",
+            "SHOW COLUMNS FROM notifications LIKE 'link_url'" => "ALTER TABLE notifications ADD COLUMN link_url TEXT NULL AFTER icon",
+            "SHOW COLUMNS FROM notifications LIKE 'dedupe_key'" => "ALTER TABLE notifications ADD COLUMN dedupe_key VARCHAR(191) NULL AFTER link_url",
+            "SHOW COLUMNS FROM notifications LIKE 'read_at'" => "ALTER TABLE notifications ADD COLUMN read_at TIMESTAMP NULL DEFAULT NULL AFTER is_read"
+        ];
+
+        foreach ($columnMigrations as $checkSql => $alterSql) {
+            $stmt = $pdo->query($checkSql);
+            if ($stmt && $stmt->fetch()) {
+                continue;
+            }
+            $pdo->exec($alterSql);
+        }
+
+        $ready = true;
+    } catch (Throwable $e) {
+        $ready = false;
+    }
+
+    return $ready;
+}
+
+function notification_select_sql()
+{
+    return 'SELECT id, user_id, audience_role, type, title, body, icon, link_url, dedupe_key, is_read, read_at, created_at FROM notifications';
+}
+
+function notification_to_response(array $row): array
+{
+    $icon = trim((string)($row['icon'] ?? ''));
+    $link = trim((string)($row['link_url'] ?? ''));
+    $dedupeKey = trim((string)($row['dedupe_key'] ?? ''));
+
+    return [
+        'id' => (string)($row['id'] ?? ''),
+        'userId' => (int)($row['user_id'] ?? 0),
+        'role' => ($row['audience_role'] ?? '') !== '' ? (string)$row['audience_role'] : null,
+        'type' => ($row['type'] ?? '') !== '' ? (string)$row['type'] : 'info',
+        'title' => (string)($row['title'] ?? ''),
+        'message' => (string)($row['body'] ?? ''),
+        'icon' => $icon !== '' ? $icon : 'Bell',
+        'link' => $link !== '' ? $link : null,
+        'read' => !empty($row['is_read']),
+        'dedupeKey' => $dedupeKey !== '' ? $dedupeKey : null,
+        'createdAt' => $row['created_at'] ?? null,
+        'readAt' => $row['read_at'] ?? null
+    ];
+}
+
+function fetch_notification_for_user(PDO $pdo, int $notificationId, int $userId, ?string $role = null): ?array
+{
+    if ($notificationId <= 0 || $userId <= 0 || !notifications_table_ready($pdo)) {
+        return null;
+    }
+
+    $sql = notification_select_sql() . ' WHERE id = :id AND user_id = :user_id';
+    $params = [
+        'id' => $notificationId,
+        'user_id' => $userId
+    ];
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+    $sql .= ' LIMIT 1';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $row = $stmt->fetch();
+    return $row ? notification_to_response($row) : null;
+}
+
+function fetch_user_notifications(PDO $pdo, int $userId, ?string $role = null, int $limit = 50): array
+{
+    if ($userId <= 0 || !notifications_table_ready($pdo)) {
+        return [];
+    }
+
+    $safeLimit = max(1, min(100, (int)$limit));
+    $sql = notification_select_sql() . ' WHERE user_id = :user_id';
+    $params = ['user_id' => $userId];
+
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+
+    $sql .= ' ORDER BY created_at DESC, id DESC LIMIT ' . $safeLimit;
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+
+    return array_map('notification_to_response', $rows);
+}
+
+function unread_notification_count(PDO $pdo, int $userId, ?string $role = null): int
+{
+    if ($userId <= 0 || !notifications_table_ready($pdo)) {
+        return 0;
+    }
+
+    $sql = 'SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0';
+    $params = ['user_id' => $userId];
+
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
+
+function create_user_notification(PDO $pdo, int $userId, array $payload): ?array
+{
+    if ($userId <= 0 || !notifications_table_ready($pdo)) {
+        return null;
+    }
+
+    $title = trim((string)($payload['title'] ?? ''));
+    $message = trim((string)($payload['message'] ?? $payload['body'] ?? ''));
+    if ($title === '' || $message === '') {
+        return null;
+    }
+
+    $role = normalize_notification_role(
+        $payload['role'] ?? $payload['audienceRole'] ?? $payload['audience_role'] ?? '',
+        ''
+    );
+    $type = trim((string)($payload['type'] ?? 'info'));
+    if ($type === '') {
+        $type = 'info';
+    }
+    $icon = trim((string)($payload['icon'] ?? 'Bell'));
+    if ($icon === '') {
+        $icon = 'Bell';
+    }
+    $link = trim((string)($payload['link'] ?? $payload['linkUrl'] ?? $payload['link_url'] ?? ''));
+    $link = $link !== '' ? $link : null;
+    $dedupeKey = trim((string)($payload['dedupeKey'] ?? $payload['dedupe_key'] ?? ''));
+    $dedupeKey = $dedupeKey !== '' ? $dedupeKey : null;
+
+    if ($dedupeKey !== null) {
+        $check = $pdo->prepare(
+            notification_select_sql() . '
+             WHERE user_id = :user_id
+               AND audience_role <=> :audience_role
+               AND dedupe_key = :dedupe_key
+             ORDER BY id DESC
+             LIMIT 1'
+        );
+        $check->execute([
+            'user_id' => $userId,
+            'audience_role' => $role !== '' ? $role : null,
+            'dedupe_key' => $dedupeKey
+        ]);
+        $existing = $check->fetch();
+        if ($existing) {
+            return notification_to_response($existing);
+        }
+    }
+
+    $insert = $pdo->prepare(
+        'INSERT INTO notifications (user_id, audience_role, type, title, body, icon, link_url, dedupe_key, is_read)
+         VALUES (:user_id, :audience_role, :type, :title, :body, :icon, :link_url, :dedupe_key, :is_read)'
+    );
+    $insert->execute([
+        'user_id' => $userId,
+        'audience_role' => $role !== '' ? $role : null,
+        'type' => $type,
+        'title' => $title,
+        'body' => $message,
+        'icon' => $icon,
+        'link_url' => $link,
+        'dedupe_key' => $dedupeKey,
+        'is_read' => 0
+    ]);
+
+    return fetch_notification_for_user($pdo, (int)$pdo->lastInsertId(), $userId, $role !== '' ? $role : null);
+}
+
+function mark_user_notification_read(PDO $pdo, int $notificationId, int $userId, ?string $role = null): ?array
+{
+    if ($notificationId <= 0 || $userId <= 0 || !notifications_table_ready($pdo)) {
+        return null;
+    }
+
+    $sql = 'UPDATE notifications
+            SET is_read = 1,
+                read_at = IFNULL(read_at, NOW())
+            WHERE id = :id
+              AND user_id = :user_id';
+    $params = [
+        'id' => $notificationId,
+        'user_id' => $userId
+    ];
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    return fetch_notification_for_user($pdo, $notificationId, $userId, $role);
+}
+
+function mark_all_user_notifications_read(PDO $pdo, int $userId, ?string $role = null): int
+{
+    if ($userId <= 0 || !notifications_table_ready($pdo)) {
+        return 0;
+    }
+
+    $sql = 'UPDATE notifications
+            SET is_read = 1,
+                read_at = IFNULL(read_at, NOW())
+            WHERE user_id = :user_id
+              AND is_read = 0';
+    $params = ['user_id' => $userId];
+
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->rowCount();
+}
+
+function clear_user_notifications(PDO $pdo, int $userId, ?string $role = null): int
+{
+    if ($userId <= 0 || !notifications_table_ready($pdo)) {
+        return 0;
+    }
+
+    $sql = 'DELETE FROM notifications WHERE user_id = :user_id';
+    $params = ['user_id' => $userId];
+
+    if ($role !== null && $role !== '') {
+        $sql .= ' AND audience_role <=> :audience_role';
+        $params['audience_role'] = $role;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->rowCount();
+}
+
 function add_system_alert(PDO $pdo, string $category, string $name, string $trigger, string $action)
 {
     $check = $pdo->prepare(
@@ -2100,6 +2388,123 @@ if (preg_match('#^/api/users/(\d+)$#', $path, $matches) && $method === 'PATCH') 
             'phone' => $updated['phone'] ?? $phone,
             'avatarUrl' => $avatarColumnReady ? (($updated['avatar_url'] ?? '') ?: null) : null
         ]
+    ]);
+}
+
+if ($path === '/api/notifications' && $method === 'GET') {
+    $userId = (int)get_query_param('userId', 0);
+    $role = normalize_notification_role(get_query_param('role', ''), '');
+    $limit = (int)get_query_param('limit', 50);
+
+    if ($userId <= 0) {
+        json_response(['error' => 'userId is required'], 422);
+    }
+    if (!notifications_table_ready($pdo)) {
+        json_response(['error' => 'Notifications storage unavailable'], 500);
+    }
+
+    json_response([
+        'notifications' => fetch_user_notifications($pdo, $userId, $role !== '' ? $role : null, $limit),
+        'unreadCount' => unread_notification_count($pdo, $userId, $role !== '' ? $role : null)
+    ]);
+}
+
+if ($path === '/api/notifications' && $method === 'POST') {
+    $payload = get_json_body();
+    $userId = (int)($payload['userId'] ?? 0);
+    $role = normalize_notification_role($payload['role'] ?? '', '');
+    $title = trim((string)($payload['title'] ?? ''));
+    $message = trim((string)($payload['message'] ?? $payload['body'] ?? ''));
+
+    if ($userId <= 0) {
+        json_response(['error' => 'userId is required'], 422);
+    }
+    if ($title === '' || $message === '') {
+        json_response(['error' => 'title and message are required'], 422);
+    }
+    if (!notifications_table_ready($pdo)) {
+        json_response(['error' => 'Notifications storage unavailable'], 500);
+    }
+
+    $notification = create_user_notification($pdo, $userId, [
+        'role' => $role,
+        'type' => $payload['type'] ?? 'info',
+        'title' => $title,
+        'message' => $message,
+        'icon' => $payload['icon'] ?? 'Bell',
+        'link' => $payload['link'] ?? null,
+        'dedupeKey' => $payload['dedupeKey'] ?? null
+    ]);
+
+    if (!$notification) {
+        json_response(['error' => 'Unable to save notification'], 500);
+    }
+
+    json_response(['notification' => $notification]);
+}
+
+if (preg_match('#^/api/notifications/(\d+)$#', $path, $matches) && $method === 'PATCH') {
+    $notificationId = (int)$matches[1];
+    $payload = get_json_body();
+    $userId = (int)($payload['userId'] ?? 0);
+    $role = normalize_notification_role($payload['role'] ?? '', '');
+    $read = to_bool($payload['read'] ?? true);
+
+    if ($userId <= 0) {
+        json_response(['error' => 'userId is required'], 422);
+    }
+    if (!$read) {
+        json_response(['error' => 'Only read=true is supported'], 422);
+    }
+    if (!notifications_table_ready($pdo)) {
+        json_response(['error' => 'Notifications storage unavailable'], 500);
+    }
+
+    $notification = mark_user_notification_read($pdo, $notificationId, $userId, $role !== '' ? $role : null);
+    if (!$notification) {
+        json_response(['error' => 'Notification not found'], 404);
+    }
+
+    json_response(['notification' => $notification]);
+}
+
+if ($path === '/api/notifications/read-all' && $method === 'POST') {
+    $payload = get_json_body();
+    $userId = (int)($payload['userId'] ?? 0);
+    $role = normalize_notification_role($payload['role'] ?? '', '');
+
+    if ($userId <= 0) {
+        json_response(['error' => 'userId is required'], 422);
+    }
+    if (!notifications_table_ready($pdo)) {
+        json_response(['error' => 'Notifications storage unavailable'], 500);
+    }
+
+    $updated = mark_all_user_notifications_read($pdo, $userId, $role !== '' ? $role : null);
+    json_response([
+        'updated' => $updated,
+        'notifications' => fetch_user_notifications($pdo, $userId, $role !== '' ? $role : null),
+        'unreadCount' => unread_notification_count($pdo, $userId, $role !== '' ? $role : null)
+    ]);
+}
+
+if ($path === '/api/notifications/clear' && $method === 'POST') {
+    $payload = get_json_body();
+    $userId = (int)($payload['userId'] ?? 0);
+    $role = normalize_notification_role($payload['role'] ?? '', '');
+
+    if ($userId <= 0) {
+        json_response(['error' => 'userId is required'], 422);
+    }
+    if (!notifications_table_ready($pdo)) {
+        json_response(['error' => 'Notifications storage unavailable'], 500);
+    }
+
+    $deleted = clear_user_notifications($pdo, $userId, $role !== '' ? $role : null);
+    json_response([
+        'deleted' => $deleted,
+        'notifications' => [],
+        'unreadCount' => 0
     ]);
 }
 

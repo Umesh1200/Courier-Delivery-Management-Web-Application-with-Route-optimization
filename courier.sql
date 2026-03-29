@@ -334,9 +334,15 @@ CREATE TABLE proofs (
 CREATE TABLE notifications (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
+  audience_role VARCHAR(20) NULL,
+  type VARCHAR(50) NOT NULL DEFAULT 'info',
   title VARCHAR(150) NOT NULL,
   body TEXT,
+  icon VARCHAR(100),
+  link_url TEXT,
+  dedupe_key VARCHAR(191),
   is_read BOOLEAN DEFAULT false,
+  read_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );

@@ -7,7 +7,6 @@ import {
   buildNotificationContext,
   clearNotifications,
   formatNotificationTime,
-  getNotificationStorageKey,
   markAllNotificationsRead,
   markNotificationRead,
   readNotifications
@@ -17,6 +16,7 @@ const NotificationCenter = ({ userRole = 'customer' }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [isMutating, setIsMutating] = useState(false);
 
   const userId = typeof window !== 'undefined' ? window.localStorage.getItem('userId') : null;
   const notificationContext = useMemo(
@@ -28,32 +28,54 @@ const NotificationCenter = ({ userRole = 'customer' }) => {
     [notifications]
   );
 
-  const refreshNotifications = useCallback(() => {
-    setNotifications(readNotifications(notificationContext));
+  const refreshNotifications = useCallback(async () => {
+    const nextNotifications = await readNotifications(notificationContext);
+    setNotifications(Array.isArray(nextNotifications) ? nextNotifications : []);
   }, [notificationContext]);
 
   useEffect(() => {
-    refreshNotifications();
+    let isActive = true;
+    const loadNotifications = async () => {
+      const nextNotifications = await readNotifications(notificationContext);
+      if (!isActive) {
+        return;
+      }
+      setNotifications(Array.isArray(nextNotifications) ? nextNotifications : []);
+    };
+
+    void loadNotifications();
+
+    return () => {
+      isActive = false;
+    };
   }, [refreshNotifications]);
 
   useEffect(() => {
-    const storageKey = getNotificationStorageKey(notificationContext);
     const handleNotificationsUpdated = () => {
-      refreshNotifications();
+      void refreshNotifications();
     };
-    const handleStorage = (event) => {
-      if (event?.key === storageKey) {
-        refreshNotifications();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshNotifications();
       }
     };
 
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
-    window.addEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleNotificationsUpdated);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
-      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleNotificationsUpdated);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [notificationContext, refreshNotifications]);
+  }, [refreshNotifications]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    void refreshNotifications();
+  }, [isOpen, refreshNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -70,27 +92,47 @@ const NotificationCenter = ({ userRole = 'customer' }) => {
     setIsOpen((previous) => !previous);
   };
 
-  const handleMarkAsRead = (id) => {
-    markNotificationRead(notificationContext, id);
-    refreshNotifications();
+  const handleMarkAsRead = async (id) => {
+    const targetId = String(id || '').trim();
+    if (!targetId) {
+      return;
+    }
+
+    setNotifications((previous) => previous.map((item) => (
+      item?.id === targetId ? { ...item, read: true } : item
+    )));
+    await markNotificationRead(notificationContext, targetId);
+    await refreshNotifications();
   };
 
   const handleNotificationClick = (notification) => {
-    handleMarkAsRead(notification?.id);
+    void handleMarkAsRead(notification?.id);
     const link = typeof notification?.link === 'string' ? notification.link.trim() : '';
     if (link) {
       navigate(link);
     }
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllNotificationsRead(notificationContext);
-    refreshNotifications();
+  const handleMarkAllAsRead = async () => {
+    if (isMutating || unreadCount <= 0) {
+      return;
+    }
+    setIsMutating(true);
+    setNotifications((previous) => previous.map((item) => ({ ...item, read: true })));
+    await markAllNotificationsRead(notificationContext);
+    await refreshNotifications();
+    setIsMutating(false);
   };
 
-  const handleClearAll = () => {
-    clearNotifications(notificationContext);
-    refreshNotifications();
+  const handleClearAll = async () => {
+    if (isMutating || notifications.length <= 0) {
+      return;
+    }
+    setIsMutating(true);
+    setNotifications([]);
+    await clearNotifications(notificationContext);
+    await refreshNotifications();
+    setIsMutating(false);
     setIsOpen(false);
   };
 
@@ -112,6 +154,7 @@ const NotificationCenter = ({ userRole = 'customer' }) => {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
+                  disabled={isMutating}
                   className="text-xs text-primary hover:underline"
                 >
                   Mark all read
@@ -165,6 +208,7 @@ const NotificationCenter = ({ userRole = 'customer' }) => {
                 size="sm"
                 fullWidth
                 onClick={handleClearAll}
+                disabled={isMutating}
                 iconName="Trash2"
                 iconPosition="left"
               >
