@@ -23,7 +23,7 @@ The repository also includes a PHP backend, a MySQL schema, demo-friendly UI sta
 - Earnings, activity, and performance panels for delivery operations
 - Admin monitoring for revenue, active deliveries, user management, support tickets, analytics, and order operations
 - PHP + MySQL backend structure with routing and assignment algorithms under `backend/Algorithms`
-- Demo query modes that make README screenshots reproducible without depending on live production data
+
 
 ## Tech Stack
 
