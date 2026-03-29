@@ -213,5 +213,4 @@ The repository also includes a PHP backend, a MySQL schema, demo-friendly UI sta
 ## Notes
 
 - `backend/config.php` is intentionally excluded from version control
-- The frontend expects the backend at `http://localhost:8000` unless you change the API configuration
-- The screenshot assets in this repository are referenced directly by the README, so the GitHub preview renders without extra setup
+- The frontend expects the backend at `http://localhost:8000` unless  change in the API configuration
