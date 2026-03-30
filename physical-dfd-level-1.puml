@@ -1,0 +1,77 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+title CourierFlow - Physical DFD Level 1
+
+rectangle "Customer" as Customer #FFF2CC
+rectangle "Courier" as Courier #FFF2CC
+rectangle "Admin" as Admin #FFF2CC
+rectangle "Khalti Payment Gateway" as Khalti #FCE5CD
+
+package "Client Tier" {
+  rectangle "P1 Auth / Profile UI\nsrc/pages/auth/Login.jsx\nsrc/pages/auth/Signup.jsx\nsrc/pages/profile/index.jsx" as P1 #D9EAF7
+  rectangle "P2 Booking / Checkout UI\nsrc/pages/create-booking/*\nsrc/pages/checkout-page/*" as P2 #D9EAF7
+  rectangle "P3 Tracking / Chat / Support UI\nsrc/pages/order-tracking/*\nsrc/components/ui/ChatModal.jsx" as P3 #D9EAF7
+  rectangle "P4 Dashboard / Navigation UI\nsrc/pages/user-dashboard/*\nsrc/pages/courier-dashboard/*\nsrc/pages/courier-navigation/*\nsrc/pages/admin-dashboard/*" as P4 #D9EAF7
+  database "D1 Browser Storage\nlocalStorage:\nauthToken, userId, userRole,\nbookingDraft, pendingKhalti*\nsessionStorage:\nnav runtime, chat state" as D1 #F4F4F4
+}
+
+package "Application Tier" {
+  rectangle "P5 API Router / Controllers\nbackend/public/index.php" as P5 #D9EAF7
+  rectangle "P6 Auto Assignment Module\nbackend/Algorithms/AutoAssign.php" as P6 #D9EAF7
+  rectangle "P7 Route Optimization Module\nbackend/Algorithms/RouteOptimization.php" as P7 #D9EAF7
+}
+
+package "Data Tier" {
+  database "D2 Account Tables\nusers, roles, user_roles,\ncourier_profiles" as D2 #F4F4F4
+  database "D3 Booking Core Tables\nbookings, packages,\naddresses, branches" as D3 #F4F4F4
+  database "D4 Operations Tables\nbooking_status_events,\norder_events,\ncancellation_requests,\nsystem_alerts, proofs" as D4 #F4F4F4
+  database "D5 Finance Tables\npayments, fines" as D5 #F4F4F4
+  database "D6 Fleet / Route Tables\nvehicles, vehicle_assignments,\ncourier_live_location,\ngraph_nodes, graph_edges,\nroute_plans, route_candidates,\nroute_stops" as D6 #F4F4F4
+  database "D7 Interaction Tables\nmessages, notifications,\nsupport_tickets,\nsupport_ticket_messages,\nratings" as D7 #F4F4F4
+  database "D8 File Storage\nbackend/public/uploads/\navatars, proofs, support" as D8 #F4F4F4
+}
+
+Customer <--> P1 : signup, login,\nprofile edits
+Customer <--> P2 : booking form,\npayment selection
+Customer <--> P3 : tracking query,\nchat, support,\nproof view
+Customer <--> P4 : dashboard,\ninvoices, ratings
+
+Courier <--> P4 : availability,\nroutes, status,\nproof, incidents
+Admin <--> P4 : users, orders,\nbranches, vehicles,\nsupport, analytics
+
+P1 <--> D1 : token, role,\nuser session cache
+P2 <--> D1 : booking draft,\npending Khalti data
+P3 <--> D1 : access code,\nchat seen state
+P4 <--> D1 : user session,\nnav session,\nnotification state
+
+P1 <--> P5 : /api/auth/*\n/api/users/*
+P2 <--> P5 : /api/bookings\n/api/payments/khalti/*
+P3 <--> P5 : /api/tracking\n/api/messages\n/api/support/*
+P4 <--> P5 : /api/dashboard/*\n/api/courier/*\n/api/admin/*\n/api/ratings
+
+P5 <--> P6 : auto_assign_booking()\nauto_assign_booking_stage()
+P5 <--> P7 : /api/routes/recommend\n/api/routes/select\n/api/routes/reoptimize
+P5 <--> Khalti : epayment initiate /\nlookup / verify
+
+P5 <--> D2 : auth, roles,\nprofile updates
+P5 <--> D3 : create / update\nbooking records
+P5 <--> D4 : status events,\nincidents, proofs,\nalerts
+P5 <--> D5 : booking payments,\nfines, refunds
+P5 <--> D6 : vehicles, live location,\nroute plans, graph data
+P5 <--> D7 : chat, notifications,\nsupport, ratings
+P5 <--> D8 : avatar uploads,\nproof images,\nsupport attachments
+
+P6 <--> D2 : courier role / profile lookup
+P6 <--> D3 : booking assignment,\nbranch decision
+P6 <--> D4 : assignment events,\nalert triggers
+P6 <--> D6 : vehicle and branch\ncapacity checks
+
+P7 <--> D3 : booking stop inputs
+P7 <--> D6 : graph data,\nroute plans,\nroute candidates,\nroute stops
+
+@enduml

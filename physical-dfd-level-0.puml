@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+title CourierFlow - Physical DFD Level 0
+
+rectangle "Customer Device / Browser" as Customer #FFF2CC
+rectangle "Courier Device / Browser" as Courier #FFF2CC
+rectangle "Admin Device / Browser" as Admin #FFF2CC
+rectangle "Khalti Payment Gateway" as Khalti #FCE5CD
+
+rectangle "React Frontend SPA\nVite build + React Router\nsrc/Routes.jsx\nsrc/pages/*\nsrc/components/*" as Frontend #D9EAF7
+database "Browser Storage\nlocalStorage\nsessionStorage" as BrowserStorage #F4F4F4
+
+rectangle "PHP REST API\nbackend/public/index.php" as Api #D9EAF7
+rectangle "Dispatch Engine\nbackend/Algorithms/AutoAssign.php" as DispatchEngine #D9EAF7
+rectangle "Route Engine\nbackend/Algorithms/RouteOptimization.php" as RouteEngine #D9EAF7
+
+database "MySQL Database\ncourier schema" as MySQL #F4F4F4
+database "File Upload Storage\nbackend/public/uploads/\navatars, proofs, support" as FileStorage #F4F4F4
+
+Customer <--> Frontend : booking, tracking,\nchat, dashboard use
+Courier <--> Frontend : assignment, navigation,\nproof, live status use
+Admin <--> Frontend : monitoring,\nmanagement, support use
+
+Frontend <--> BrowserStorage : auth token, role,\ndrafts, nav state
+Frontend <--> Api : HTTP JSON requests / responses
+
+Api <--> DispatchEngine : auto-assign calls\nassignment result
+Api <--> RouteEngine : route recommend,\nselect, reoptimize
+Api <--> MySQL : SQL reads / writes
+Api <--> FileStorage : upload / read avatar,\nproof, support images
+Api <--> Khalti : payment initiate /\npayment verify
+
+DispatchEngine <--> MySQL : couriers, vehicles,\nbranches, bookings
+RouteEngine <--> MySQL : graph, route plans,\nbookings, fleet data
+
+@enduml
