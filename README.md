@@ -14,6 +14,14 @@ CourierFlow is organized around three primary roles:
 
 The repository also includes a PHP backend, a MySQL schema, demo-friendly UI states, and a screenshot library used directly in this README for GitHub presentation.
 
+## Demo Video
+
+Watch a full walkthrough of CourierFlow in action, covering the customer booking flow, courier navigation, route optimization, and admin operations.
+
+[![Watch the Demo](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-blue?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1f3E5Z3c5eJGtYcsBZeV7BJ1rOTO6lJp2/view?usp=sharing)
+
+> **[▶ Click here to watch the demo video](https://drive.google.com/file/d/1f3E5Z3c5eJGtYcsBZeV7BJ1rOTO6lJp2/view?usp=sharing)**
+
 ## Core Features
 
 - Multi-step booking flow with package details, pickup and delivery addresses, scheduling, special instructions, and payment summary
