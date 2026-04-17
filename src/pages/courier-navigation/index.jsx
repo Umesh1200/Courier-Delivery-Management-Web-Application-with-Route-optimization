@@ -24,6 +24,8 @@ const NAV_SESSION_KEY = '__courierNavPayload';
 const API_BASE_URL = 'http://localhost:8000';
 const PROXIMITY_REQUIRED_METERS = 90;
 const DELIVERY_FALLBACK_PROXIMITY_METERS = 220;
+// Show force-confirm only when courier is nearby but can't reach the pin
+const FORCE_CONFIRM_APPROACH_METERS = 500;
 const DASHBOARD_POLL_MS = 10000;
 const LOCATION_PUSH_MS = 15000;
 const STEP_CONFIRM_DELIVERY_LOAD = '__confirm_delivery_load__';
@@ -640,6 +642,8 @@ const CourierNavigationPage = () => {
   const [incidentNotes, setIncidentNotes] = useState('');
   const [incidentSubmitError, setIncidentSubmitError] = useState('');
   const [isIncidentSubmitting, setIsIncidentSubmitting] = useState(false);
+  const [showProximityOverride, setShowProximityOverride] = useState(false);
+  const [proximityOverrideReason, setProximityOverrideReason] = useState('');
   const reactNavigationRef = useRef(null);
   const watchIdRef = useRef(null);
   const lastLocationPushRef = useRef(0);
@@ -1466,6 +1470,8 @@ const CourierNavigationPage = () => {
   useEffect(() => {
     setConfirmationError('');
     setConfirmationNotice('');
+    setShowProximityOverride(false);
+    setProximityOverrideReason('');
   }, [nextStop?.stopId]);
 
   useEffect(() => {
@@ -1926,11 +1932,11 @@ const CourierNavigationPage = () => {
     return finalStatus;
   }, [confirmDeliveryLoad, confirmDestinationBranchHandover, confirmLinehaulLoad, patchBookingStatus, resolveSequenceStepStatuses]);
 
-  const executeStopConfirmation = useCallback(async (stop, proofOverride = null) => {
+  const executeStopConfirmation = useCallback(async (stop, proofOverride = null, { overrideProximity = false, overrideReason = '' } = {}) => {
     if (!stop || !stop.action) {
       return;
     }
-    if (!stop.isWithinProximity) {
+    if (!stop.isWithinProximity && !overrideProximity) {
       setConfirmationError(`Move within ${stop?.requiredProximityMeters || PROXIMITY_REQUIRED_METERS}m to confirm this stop.`);
       return;
     }
@@ -1948,7 +1954,8 @@ const CourierNavigationPage = () => {
         if (stop.action.requiresProof) {
           await uploadProof(stop.action.deliveryId, proofOverride);
         }
-        await applyStatusSequence(stop.action.deliveryId, stop.action.sequence, stop.label || 'Navigation confirmation');
+        const descriptionSuffix = overrideProximity && overrideReason ? ` [Proximity override: ${overrideReason}]` : '';
+        await applyStatusSequence(stop.action.deliveryId, stop.action.sequence, `${stop.label || 'Navigation confirmation'}${descriptionSuffix}`);
         setConfirmationNotice('Stop confirmed successfully.');
       } else {
         let successCount = 0;
@@ -1964,10 +1971,11 @@ const CourierNavigationPage = () => {
                 : proofOverride;
               await uploadProof(update.deliveryId, proofPayload);
             }
+            const batchDescSuffix = overrideProximity && overrideReason ? ` [Proximity override: ${overrideReason}]` : '';
             await applyStatusSequence(
               update.deliveryId,
               update.sequence,
-              stop.label || (stop.action.batchKind === 'branch' ? 'Branch confirmation' : 'Navigation confirmation')
+              `${stop.label || (stop.action.batchKind === 'branch' ? 'Branch confirmation' : 'Navigation confirmation')}${batchDescSuffix}`
             );
             successCount += 1;
           } catch (error) {
@@ -2003,6 +2011,8 @@ const CourierNavigationPage = () => {
       }
       postToDriver({ type: 'courier-nav/advance-leg' });
       setShowProofCapture(false);
+      setShowProximityOverride(false);
+      setProximityOverrideReason('');
       resetProofData();
       loadNavigationContext(true);
     } catch (error) {
@@ -2078,11 +2088,12 @@ const CourierNavigationPage = () => {
     }));
   }, [updateProofForDelivery]);
 
-  const handlePrimaryConfirmation = useCallback(() => {
+  const handlePrimaryConfirmation = useCallback((opts = {}) => {
     if (!nextStop || !nextStop.action) {
       return;
     }
-    if (!nextStop.isWithinProximity) {
+    const { overrideProximity = false, overrideReason = '' } = opts;
+    if (!nextStop.isWithinProximity && !overrideProximity) {
       setConfirmationError(`Move within ${nextStop?.requiredProximityMeters || PROXIMITY_REQUIRED_METERS}m to confirm this stop.`);
       return;
     }
@@ -2090,7 +2101,7 @@ const CourierNavigationPage = () => {
       setShowProofCapture(true);
       return;
     }
-    executeStopConfirmation(nextStop);
+    executeStopConfirmation(nextStop, null, { overrideProximity, overrideReason });
   }, [executeStopConfirmation, nextStop]);
 
   const handleProofSubmit = useCallback(() => {
@@ -2268,7 +2279,7 @@ const CourierNavigationPage = () => {
                 {proximityStatusLabel}
               </span>
               <Link
-                to="/courier-dashboard#route"
+                to={{ pathname: '/courier-dashboard', hash: '#route' }}
                 className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-smooth hover:bg-muted hover:text-foreground"
               >
                 <Icon name="ArrowLeft" size={16} />
@@ -2776,18 +2787,73 @@ const CourierNavigationPage = () => {
                     fullWidth
                     iconName={nextStop?.action?.iconName || 'CheckCircle2'}
                     iconPosition="left"
-                    onClick={handlePrimaryConfirmation}
+                    onClick={() => handlePrimaryConfirmation()}
                     disabled={!nextStop || !nextStop?.isWithinProximity || isConfirming}
                   >
                     {isConfirming
                       ? 'Confirming...'
                       : nextStop?.action?.label || 'Confirm Stop'}
                   </Button>
-                  {!nextStop?.isWithinProximity && nextStop ? (
+
+                  {!nextStop?.isWithinProximity && nextStop && Number.isFinite(nextStop?.distanceMeters) && nextStop.distanceMeters <= FORCE_CONFIRM_APPROACH_METERS ? (
+                    <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
+                      <p className="text-[11px] text-warning font-medium flex items-center gap-1">
+                        <Icon name="AlertTriangle" size={12} />
+                        Move within {nextStop.requiredProximityMeters || PROXIMITY_REQUIRED_METERS}m to unlock — or force confirm if the location is unreachable.
+                      </p>
+                      {!showProximityOverride ? (
+                        <button
+                          type="button"
+                          className="text-[11px] underline text-muted-foreground hover:text-foreground transition-smooth"
+                          onClick={() => { setShowProximityOverride(true); setConfirmationError(''); }}
+                        >
+                          Can't reach this point? Force confirm
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-medium text-muted-foreground block">Reason for override (required)</label>
+                          <select
+                            className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            value={proximityOverrideReason}
+                            onChange={(e) => setProximityOverrideReason(e.target.value)}
+                          >
+                            <option value="">Select a reason…</option>
+                            <option value="gated_or_inaccessible">Gated / inaccessible premises</option>
+                            <option value="wrong_gps_pin">Incorrect GPS pin on order</option>
+                            <option value="no_road_access">No road access to exact point</option>
+                            <option value="customer_confirmed_remote">Customer confirmed remotely</option>
+                            <option value="safety_concern">Safety concern at location</option>
+                            <option value="other">Other</option>
+                          </select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              className="h-8 rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-muted transition-smooth"
+                              onClick={() => { setShowProximityOverride(false); setProximityOverrideReason(''); }}
+                              disabled={isConfirming}
+                            >
+                              Cancel
+                            </button>
+                            <Button
+                              variant="warning"
+                              size="sm"
+                              iconName="ShieldAlert"
+                              iconPosition="left"
+                              disabled={!proximityOverrideReason || isConfirming}
+                              onClick={() => handlePrimaryConfirmation({ overrideProximity: true, overrideReason: proximityOverrideReason })}
+                            >
+                              {isConfirming ? 'Confirming…' : 'Force Confirm'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : !nextStop?.isWithinProximity && nextStop ? (
                     <p className="text-[11px] text-muted-foreground">
                       Move within {nextStop.requiredProximityMeters || PROXIMITY_REQUIRED_METERS}m to unlock this action.
                     </p>
                   ) : null}
+
                   {navigationIncidentAction ? (
                     <Button
                       variant="danger"

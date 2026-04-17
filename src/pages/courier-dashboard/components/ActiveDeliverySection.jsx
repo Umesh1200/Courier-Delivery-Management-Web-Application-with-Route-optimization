@@ -249,11 +249,35 @@ const ActiveDeliverySection = ({
           </div>
           <div>
             <h2 className="text-lg md:text-xl font-semibold text-foreground">Active {roleLabel}</h2>
-            <p className="text-xs md:text-sm text-muted-foreground">Currently in progress</p>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              {currentStatusCode === 'pickup_assigned' ? 'Awaiting pickup confirmation'
+                : currentStatusCode === 'picked_up' ? 'Picked up — heading to branch'
+                : currentStatusCode === 'in_transit_to_origin_branch' ? 'In transit to origin branch'
+                : currentStatusCode === 'linehaul_assigned' ? 'Awaiting linehaul load confirmation'
+                : currentStatusCode === 'linehaul_load_confirmed' ? 'Linehaul load confirmed'
+                : currentStatusCode === 'linehaul_in_transit' ? 'In transit via linehaul'
+                : currentStatusCode === 'received_at_destination_branch' ? 'Received at destination branch'
+                : currentStatusCode === 'delivery_assigned' ? 'Awaiting delivery load confirmation'
+                : currentStatusCode === 'delivery_load_confirmed' ? 'Delivery load confirmed'
+                : currentStatusCode === 'out_for_delivery' ? 'Out for delivery'
+                : currentStatusCode === 'delivery_attempt_failed' ? 'Delivery attempt failed'
+                : currentStatusCode === 'waiting_for_reattempt' ? 'Waiting for reattempt'
+                : 'Currently in progress'}
+            </p>
           </div>
         </div>
-        <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full animate-pulse">
-          IN TRANSIT
+        <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+          ['out_for_delivery', 'linehaul_in_transit', 'in_transit_to_origin_branch'].includes(currentStatusCode)
+            ? 'bg-accent/10 text-accent animate-pulse'
+            : ['pickup_assigned', 'delivery_assigned', 'linehaul_assigned'].includes(currentStatusCode)
+              ? 'bg-warning/10 text-warning'
+              : 'bg-primary/10 text-primary'
+        }`}>
+          {['out_for_delivery', 'linehaul_in_transit', 'in_transit_to_origin_branch'].includes(currentStatusCode)
+            ? 'IN TRANSIT'
+            : ['pickup_assigned', 'delivery_assigned', 'linehaul_assigned'].includes(currentStatusCode)
+              ? 'ASSIGNED'
+              : currentStatusCode.replaceAll('_', ' ').toUpperCase() || 'ACTIVE'}
         </span>
       </div>
       <div className="bg-gradient-to-br from-accent/5 to-accent/10 rounded-xl p-4 md:p-6 mb-6 border border-accent/20">

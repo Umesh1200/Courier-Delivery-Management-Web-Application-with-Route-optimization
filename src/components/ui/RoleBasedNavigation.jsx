@@ -23,9 +23,10 @@ const RoleBasedNavigation = ({ userRole = 'customer', userName = 'User', courier
     ],
     courier: [
       { label: 'Dashboard', path: '/courier-dashboard', icon: 'LayoutDashboard' },
-      { label: `My ${courierLabel}`, path: '/courier-deliveries', icon: 'Truck' },
-      { label: 'Earnings', path: '/courier-earnings', icon: 'NepalRupee' },
+      { label: `My ${courierLabel}`, path: '/courier-dashboard', hash: '#deliveries', icon: 'Truck' },
+      { label: 'Earnings', path: '/courier-dashboard', hash: '#earnings', icon: 'NepalRupee' },
       { label: 'Route', path: '/courier-dashboard', hash: '#route', icon: 'Navigation' },
+      { label: 'Navigation', path: '/courier-navigation', icon: 'Map' },
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'LayoutDashboard' },
@@ -96,7 +97,7 @@ const RoleBasedNavigation = ({ userRole = 'customer', userName = 'User', courier
           {currentNavItems?.map((item) => (
             <Link
               key={itemKey(item)}
-              to={item?.hash ? `${item?.path}${item?.hash}` : item?.path}
+              to={item?.hash ? { pathname: item.path, hash: item.hash } : item?.path}
               className={`role-nav-item ${isActive(item) ? 'active' : ''}`}
             >
               <Icon name={item?.icon} size={18} />
@@ -173,7 +174,7 @@ const RoleBasedNavigation = ({ userRole = 'customer', userName = 'User', courier
             {currentNavItems?.map((item) => (
               <Link
                 key={itemKey(item)}
-                to={item?.hash ? `${item?.path}${item?.hash}` : item?.path}
+                to={item?.hash ? { pathname: item.path, hash: item.hash } : item?.path}
                 className={`role-nav-mobile-item ${isActive(item) ? 'active' : ''}`}
                 onClick={handleNavClick}
               >

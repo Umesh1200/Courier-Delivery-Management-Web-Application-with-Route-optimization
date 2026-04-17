@@ -303,6 +303,21 @@ const CourierDashboard = () => {
   const location = useLocation();
   const isRouteView = location?.hash === '#route';
 
+  useEffect(() => {
+    const hash = location?.hash;
+    // #route is handled by isRouteView conditional rendering, not scroll
+    if (!hash || hash === '#route') return;
+    const id = hash.replace('#', '');
+    // Small delay to let React finish rendering the section before scrolling
+    const timer = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [location?.hash]);
+
   const getDeliveryChatMeta = useCallback((delivery) => (
     getCourierChatAccessMeta(courierRole, delivery?.status)
   ), [courierRole]);
@@ -1181,6 +1196,16 @@ const CourierDashboard = () => {
       return null;
     }
 
+    // First: prefer a delivery the courier is actively working on (in motion / out for delivery)
+    const inProgressStatuses = activeCountStatuses; // e.g. picked_up, in_transit, out_for_delivery, linehaul_in_transit, etc.
+    const inProgressDelivery = assignedDeliveries.find(
+      (delivery) => inProgressStatuses.includes(delivery?.status)
+    );
+    if (inProgressDelivery) {
+      return inProgressDelivery;
+    }
+
+    // Second: fall back to priority-ordered list (includes assigned/pending-load states)
     const priorityList = ACTIVE_STATUS_PRIORITY_BY_ROLE[roleKey] || ACTIVE_STATUS_PRIORITY_BY_ROLE.both;
     for (const status of priorityList) {
       const match = assignedDeliveries.find((delivery) => delivery?.status === status);
@@ -1189,11 +1214,9 @@ const CourierDashboard = () => {
       }
     }
 
-    const fallbackFromServer = activeDelivery && activeStatuses.includes(activeDelivery?.status)
-      ? activeDelivery
-      : null;
-    return fallbackFromServer || assignedDeliveries[0] || null;
-  }, [activeDelivery, activeStatuses, assignedDeliveries, roleKey]);
+    // Last resort: first assigned delivery (never a completed one — assignedDeliveries already filters those out)
+    return assignedDeliveries[0] || null;
+  }, [activeCountStatuses, assignedDeliveries, roleKey]);
   const activeDeliveryChatMeta = useMemo(
     () => getDeliveryChatMeta(activeDeliveryDisplay),
     [activeDeliveryDisplay, getDeliveryChatMeta]
@@ -1821,12 +1844,12 @@ const CourierDashboard = () => {
                   locationUpdateNotice={locationUpdateState.notice}
                 />
               </div>
-              <div>
+              <div id="earnings">
                 <EarningsTracker earningsData={earningsData} courierRole={courierRole} />
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6" id="deliveries">
               <div className="bg-card rounded-xl shadow-elevation-md border border-border overflow-hidden">
                 <div className="p-4 md:p-6 border-b border-border">
                   <div className="flex items-center justify-between mb-4">
